@@ -152,6 +152,13 @@ class CPDF implements Canvas
     private $_page_text;
 
     /**
+     * Pages number to ignore where applying $page_text (in function _add_page_text()).
+     *
+     * @var array
+     */
+    private $_page_text_ignorepages ;
+
+    /**
      * Array of pages for accessing after rendering is initially complete
      *
      * @var array
@@ -211,7 +218,9 @@ class CPDF implements Canvas
         $this->_height = $size[3] - $size[1];
 
         $this->_page_number = $this->_page_count = 1;
+
         $this->_page_text = array();
+        $this->_page_text_ignorepages = array();
 
         $this->_pages = array($this->_pdf->getFirstPageId());
 
@@ -1081,6 +1090,31 @@ class CPDF implements Canvas
     }
 
     /**
+     * Define some pages to ignore when appling page_text.
+     * To reset pages to ignore (setting as empty) just call it without parameter.
+     *   
+     * @param int|int[] $pages_number
+     */
+    public function page_text_ignorepages( $pages_number = null )
+    {
+        if( $pages_number == null )
+        {
+            $this->_page_text_ignorepages = array();
+        }
+        else
+        {
+            if( ! is_array($pages_number) )
+                $pages_number = array( $pages_number );
+            $this->_page_text_ignorepages = $pages_number ;
+        }
+    }
+
+    public function page_text_reset()
+    {
+        $this->_page_text = array() ;
+    }
+
+    /**
      * Add text to each page after rendering is complete
      */
     protected function _add_page_text()
@@ -1093,6 +1127,13 @@ class CPDF implements Canvas
         $eval = null;
 
         foreach ($this->_pages as $pid) {
+
+            if( in_array( $page_number, $this->_page_text_ignorepages ) )
+            {
+                $page_number ++ ;
+                continue ;
+            }
+
             $this->reopen_object($pid);
 
             foreach ($this->_page_text as $pt) {
